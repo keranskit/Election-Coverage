@@ -1,9 +1,6 @@
-import { USElection__factory } from "./../typechain-types/factories/Election.sol/USElection__factory";
 import { USElection } from "./../typechain-types/Election.sol/USElection";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import {PromiseOrValue} from "../typechain-types/common";
-import {BigNumberish} from "ethers";
 
 describe("USElection", function () {
   let usElectionFactory;
@@ -96,7 +93,7 @@ describe("USElection", function () {
       votesBiden: 800,
       votesTrump: 1200,
       stateSeats: 33
-    };
+    }; //todo ask for this
 
     expect(await usElection.currentLeader()).to.equal(2); // TRUMP
 
