@@ -23,6 +23,18 @@ describe("USElection", function () {
     expect(await usElection.electionEnded()).to.equal(false); // Not Ended
   });
 
+  it('Should not allow empty seats and equal votes', async function() {
+    const stateResultOne = ["Texas", 200, 100, 0];
+    const stateResultTwo = ["Texas", 100, 100, 10];
+
+    expect(usElection.submitStateResult(stateResultOne)).to.be.revertedWith(
+        "States must have at least 1 seat"
+    );
+    expect(usElection.submitStateResult(stateResultTwo)).to.be.revertedWith(
+        "There cannot be a tie"
+    );
+  });
+
   it("Should submit state results and get current leader", async function () {
     const stateResults = ["California", 1000, 900, 32];
 
@@ -55,14 +67,39 @@ describe("USElection", function () {
     expect(await usElection.currentLeader()).to.equal(2); // TRUMP
   });
 
+  it("Should throw on trying to submit results with not the owner", async function () {
+    const [owner, addr1] = await ethers.getSigners();
+
+    const stateResults = ["Florida", 800, 1200, 33];
+
+    expect(usElection.connect(addr1).submitStateResult(stateResults)).to.be.revertedWith(
+        "Ownable: caller is not the owner"
+    );
+  });
+
+  it("Should throw on trying to end election with not the owner", async function () {
+    const [owner, addr1] = await ethers.getSigners();
+
+    expect(usElection.connect(addr1).endElection()).to.be.revertedWith('Ownable: caller is not the owner');
+  });
+
   it("Should end the elections, get the leader and election status", async function () {
     const endElectionTx = await usElection.endElection();
 
     await endElectionTx.wait();
 
+    const stateResults = ["Florida", 800, 1200, 33];
+
     expect(await usElection.currentLeader()).to.equal(2); // TRUMP
 
     expect(await usElection.electionEnded()).to.equal(true); // Ended
+
+    expect(usElection.submitStateResult(stateResults)).to.be.revertedWith(
+        "Election ended!"
+    );
+    expect(usElection.endElection()).to.be.revertedWith(
+        "Election ended!"
+    );
   });
 
   //TODO: ADD YOUR TESTS
