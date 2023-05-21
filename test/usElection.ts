@@ -2,6 +2,8 @@ import { USElection__factory } from "./../typechain-types/factories/Election.sol
 import { USElection } from "./../typechain-types/Election.sol/USElection";
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import {PromiseOrValue} from "../typechain-types/common";
+import {BigNumberish} from "ethers";
 
 describe("USElection", function () {
   let usElectionFactory;
@@ -27,10 +29,10 @@ describe("USElection", function () {
     const stateResultOne = ["Texas", 200, 100, 0];
     const stateResultTwo = ["Texas", 100, 100, 10];
 
-    expect(usElection.submitStateResult(stateResultOne)).to.be.revertedWith(
+    await expect(usElection.submitStateResult(stateResultOne)).to.be.revertedWith(
         "States must have at least 1 seat"
     );
-    expect(usElection.submitStateResult(stateResultTwo)).to.be.revertedWith(
+    await expect(usElection.submitStateResult(stateResultTwo)).to.be.revertedWith(
         "There cannot be a tie"
     );
   });
@@ -50,7 +52,7 @@ describe("USElection", function () {
   it("Should throw when try to submit already submitted state results", async function () {
     const stateResults = ["California", 1000, 900, 32];
 
-    expect(usElection.submitStateResult(stateResults)).to.be.revertedWith(
+    await expect(usElection.submitStateResult(stateResults)).to.be.revertedWith(
       "This state result was already submitted!"
     );
   });
@@ -72,15 +74,15 @@ describe("USElection", function () {
 
     const stateResults = ["Florida", 800, 1200, 33];
 
-    expect(usElection.connect(addr1).submitStateResult(stateResults)).to.be.revertedWith(
-        "Ownable: caller is not the owner"
+    await expect(usElection.connect(addr1).submitStateResult(stateResults)).to.be.revertedWith(
+        "Not invoked by the owner"
     );
   });
 
   it("Should throw on trying to end election with not the owner", async function () {
     const [owner, addr1] = await ethers.getSigners();
 
-    expect(usElection.connect(addr1).endElection()).to.be.revertedWith('Ownable: caller is not the owner');
+    await expect(usElection.connect(addr1).endElection()).to.be.revertedWith('Not invoked by the owner');
   });
 
   it("Should end the elections, get the leader and election status", async function () {
@@ -88,17 +90,23 @@ describe("USElection", function () {
 
     await endElectionTx.wait();
 
-    const stateResults = ["Florida", 800, 1200, 33];
+    // const stateResults = ["Florida", 800, 1200, 33];
+    const stateResults = {
+      name: "Florida",
+      votesBiden: 800,
+      votesTrump: 1200,
+      stateSeats: 33
+    };
 
     expect(await usElection.currentLeader()).to.equal(2); // TRUMP
 
     expect(await usElection.electionEnded()).to.equal(true); // Ended
 
-    expect(usElection.submitStateResult(stateResults)).to.be.revertedWith(
-        "Election ended!"
+    await expect(usElection.submitStateResult(stateResults)).to.be.revertedWith(
+        "The election has ended already"
     );
-    expect(usElection.endElection()).to.be.revertedWith(
-        "Election ended!"
+    await expect(usElection.endElection()).to.be.revertedWith(
+        "The election has ended already"
     );
   });
 
